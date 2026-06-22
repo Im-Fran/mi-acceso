@@ -1,54 +1,109 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { router } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginScreen() {
-  // Aquí volvimos a declarar los estados que se habían borrado
-  const [rut, setRut] = useState('');
+  const { login, isLoading, error, clearError } = useAuth();
+
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password) return;
+
+    try {
+      await login(email, password);
+      router.replace('/(tabs)');
+    } catch {
+      // El error ya está en el contexto, no hace falta hacer nada más
+    }
+  };
+
+  const handleEmailChange = (text: string) => {
+    if (error) clearError();
+    setEmail(text);
+  };
+
+  const handlePasswordChange = (text: string) => {
+    if (error) clearError();
+    setPassword(text);
+  };
 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.content}> 
+      <View style={styles.content}>
         <Text style={styles.title}>Bienvenido a Mi Acceso</Text>
-        <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
-        
-        {/* Input de RUT */}
+        <Text style={styles.subtitle}>
+          Inicia sesión con tu Pasaporte UTEM
+        </Text>
+
+        {/* Input de correo UTEM */}
         <TextInput
-          style={styles.input}
-          placeholder="RUT usuario"
+          style={[styles.input, error ? styles.inputError : null]}
+          placeholder="Correo UTEM (usuario@utem.cl)"
           placeholderTextColor="rgba(0, 78, 170, 0.4)"
-          value={rut}
-          onChangeText={setRut}
+          value={email}
+          onChangeText={handleEmailChange}
           autoCapitalize="none"
+          keyboardType="email-address"
+          autoComplete="email"
+          editable={!isLoading}
         />
-        
-        {/* Input de Contraseña */}
+
+        {/* Input de contraseña */}
         <TextInput
-          style={styles.input}
+          style={[styles.input, error ? styles.inputError : null]}
           placeholder="Contraseña Pasaporte"
           placeholderTextColor="rgba(0, 78, 170, 0.4)"
           secureTextEntry
           value={password}
-          onChangeText={setPassword}
+          onChangeText={handlePasswordChange}
+          autoComplete="password"
+          editable={!isLoading}
         />
 
+        {/* Mensaje de error */}
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
         {/* Botón Ingresar */}
-        <Pressable 
-          style={styles.button}
-          onPress={() => {
-            alert('¡Simulando ingreso con RUT: ' + rut + '!');
-            router.replace('/(tabs)');
-          }}
+        <Pressable
+          style={[
+            styles.button,
+            (isLoading || !email.trim() || !password) && styles.buttonDisabled,
+          ]}
+          onPress={handleLogin}
+          disabled={isLoading || !email.trim() || !password}
         >
-          <Text style={styles.buttonText}>Entrar</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Text style={styles.buttonText}>Entrar</Text>
+          )}
         </Pressable>
 
         {/* Botón Volver */}
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.back()}
+          style={styles.backButton}
+          disabled={isLoading}
+        >
           <Text style={styles.backButtonText}>Volver atrás</Text>
         </Pressable>
       </View>
@@ -88,13 +143,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#004EAA',
   },
+  inputError: {
+    borderColor: '#D32F2F',
+  },
+  errorContainer: {
+    backgroundColor: 'rgba(211, 47, 47, 0.08)',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 12,
+  },
+  errorText: {
+    color: '#D32F2F',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   button: {
     width: '100%',
     backgroundColor: '#004EAA',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 8,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   buttonText: {
     color: '#FFFFFF',
