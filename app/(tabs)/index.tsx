@@ -3,10 +3,12 @@
 
 
 //este index.lsx sera el que de acceso con las credenciales a las pestañas de la app, es decir, a la parte principal de la app
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Dimensions, Image } from 'react-native';
+import React, { useMemo } from 'react';
+import { StyleSheet, Text, View, ScrollView, Dimensions, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { useRouter } from 'expo-router';
+import QRCode from 'react-native-qrcode-svg';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 
@@ -23,7 +25,18 @@ const COLORS = {
   borderLight: 'rgba(0, 78, 170, 0.1)',
 };
 
+/**
+ * Extrae los dígitos del RUT descartando el DV.
+ * Entrada:  "12.345.678-9"
+ * Salida:   "12345678"
+ */
+function parseRutForQr(rut: string | number | null | undefined): string {
+  if (rut == null) return '';
+  return String(rut).replace(/\./g, '').split('-')[0];
+}
+
 export default function StudentDashboard() {
+  const router = useRouter();
   const { user, carreras } = useAuth();
   const { manoLibresEnabled } = useSettings();
 
@@ -34,6 +47,8 @@ export default function StudentDashboard() {
   const nombreCarrera = carreraPrincipal?.nombre ?? '—';
   const sello = carreraPrincipal?.estado ?? '—';
   const fotoUrl = user?.foto && user.foto.trim() !== '' ? user.foto : null;
+
+  const qrValue = useMemo(() => parseRutForQr(user?.rut), [user?.rut]);
 
   const bannerBorderColor = manoLibresEnabled
     ? COLORS.borderLight
@@ -68,17 +83,21 @@ export default function StudentDashboard() {
       {/* Título de Sección */}
       <Text style={styles.sectionTitle}>Tu Credencial Digital</Text>
 
-      {/* 2. Tarjeta de Identificación Universitaria Estilizada */}
-      <View style={styles.credentialCard}>
+      {/* 2. Tarjeta de Identificación Universitaria — presionable → pestaña Credencial */}
+      <TouchableOpacity
+        activeOpacity={0.85}
+        onPress={() => router.push('/(tabs)/credencial')}
+        style={styles.credentialCard}
+      >
         <View style={styles.cardCircleBg} />
-        
+
         <View style={styles.cardHeader}>
           <View style={styles.cardLogoContainer}>
             <Svg viewBox="0 0 44 48" width={28} height={30} fill="none">
-              <Path 
-                d="M22 2L4 9v14c0 12 7.8 22.4 18 25 10.2-2.6 18-13 18-25V9L22 2z" 
-                fill="rgba(255,255,255,0.15)" 
-                stroke="rgba(255,255,255,0.6)" 
+              <Path
+                d="M22 2L4 9v14c0 12 7.8 22.4 18 25 10.2-2.6 18-13 18-25V9L22 2z"
+                fill="rgba(255,255,255,0.15)"
+                stroke="rgba(255,255,255,0.6)"
                 strokeWidth="1.5"
               />
               <Rect x="12" y="14" width="10" height="10" rx="1" fill="#FFFFFF" opacity={0.9} />
@@ -95,18 +114,25 @@ export default function StudentDashboard() {
         </View>
 
         <View style={styles.cardBody}>
-          {/* Foto de Perfil */}
-          <View style={styles.photoPlaceholder}>
-            {fotoUrl ? (
-              <Image
-                source={{ uri: fotoUrl }}
-                style={styles.photoImage}
-                resizeMode="cover"
+          {/* QR a la izquierda */}
+          <View style={styles.qrWrapper}>
+            {qrValue ? (
+              <QRCode
+                value={qrValue}
+                size={82}
+                color={COLORS.blue}
+                backgroundColor="white"
               />
             ) : (
-              <Svg viewBox="0 0 24 24" width={44} height={44} fill="none" stroke="rgba(0, 78, 170, 0.4)" strokeWidth={1.5}>
-                <Path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-              </Svg>
+              <View style={styles.qrFallback} />
+            )}
+            {/* Pequeña foto sobre el QR (avatar circular) */}
+            {fotoUrl && (
+              <Image
+                source={{ uri: fotoUrl }}
+                style={styles.qrAvatar}
+                resizeMode="cover"
+              />
             )}
           </View>
 
@@ -115,7 +141,7 @@ export default function StudentDashboard() {
             <Text style={styles.studentName}>{nombreCompleto}</Text>
             <Text style={styles.studentLabel}>Carrera</Text>
             <Text style={styles.studentValue}>{nombreCarrera}</Text>
-            
+
             <View style={styles.rowGrid}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.studentLabel}>RUT</Text>
@@ -128,13 +154,18 @@ export default function StudentDashboard() {
             </View>
           </View>
         </View>
-        
+
+        {/* Indicador de que es tappeable */}
+        <View style={styles.tapHint}>
+          <Text style={styles.tapHintText}>Toca para ver credencial completa →</Text>
+        </View>
+
         <View style={styles.cardFooterBar} />
-      </View>
+      </TouchableOpacity>
 
       {/* 3. Historial de Puertas Abiertas Automáticamente */}
       <Text style={styles.sectionTitle}>Accesos Recientes (Manos Libres)</Text>
-      
+
       <View style={styles.logsContainer}>
         <View style={styles.logRow}>
           <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
@@ -294,26 +325,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 8,
   },
-  photoPlaceholder: {
-    width: 80,
-    height: 100,
+
+  // QR a la izquierda
+  qrWrapper: {
+    width: 90,
+    height: 90,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
     overflow: 'hidden',
+    position: 'relative',
   },
-  photoImage: {
-    width: 80,
-    height: 100,
+  qrFallback: {
+    width: 82,
+    height: 82,
+    backgroundColor: '#E8EEF6',
+    borderRadius: 6,
   },
+  qrAvatar: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: COLORS.blue,
+  },
+
   studentData: {
     flex: 1,
   },
   studentName: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
     marginBottom: 8,
   },
@@ -334,6 +381,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: 2,
   },
+
+  // Indicador tap
+  tapHint: {
+    alignItems: 'flex-end',
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  tapHintText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 10,
+    fontStyle: 'italic',
+  },
+
   cardFooterBar: {
     position: 'absolute',
     bottom: 0,
