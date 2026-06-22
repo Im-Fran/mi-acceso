@@ -5,13 +5,14 @@ import React, {
   useMemo,
   useState,
 } from 'react';
-import { loginWithSIGA, type DatosPersona, type AuthError } from '@/services/auth';
+import { loginWithSIGA, getCarreras, type DatosPersona, type Carrera, type AuthError } from '@/services/auth';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
 interface AuthState {
   token: string | null;
   user: DatosPersona | null;
+  carreras: Carrera[];
   isLoading: boolean;
   error: string | null;
 }
@@ -32,6 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({
     token: null,
     user: null,
+    carreras: [],
     isLoading: false,
     error: null,
   });
@@ -40,9 +42,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
       const session = await loginWithSIGA(email, password);
+
+      let carreras: Carrera[] = [];
+      try {
+        carreras = await getCarreras(session.token);
+      } catch {
+        // Si falla la carga de carreras, no bloqueamos el login
+        carreras = [];
+      }
+
       setState({
         token: session.token,
         user: session.datos_persona,
+        carreras,
         isLoading: false,
         error: null,
       });
@@ -58,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    setState({ token: null, user: null, isLoading: false, error: null });
+    setState({ token: null, user: null, carreras: [], isLoading: false, error: null });
   }, []);
 
   const clearError = useCallback(() => {
