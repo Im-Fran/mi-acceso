@@ -2,10 +2,12 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
 } from 'react';
 import { loginWithSIGA, getCarreras, type DatosPersona, type Carrera, type AuthError } from '@/services/auth';
+import { saveCredentials, loadCredentials, clearCredentials } from '@/services/storage';
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -14,12 +16,13 @@ interface AuthState {
   user: DatosPersona | null;
   carreras: Carrera[];
   isLoading: boolean;
+  isInitializing: boolean; // true mientras se verifica si hay sesión guardada
   error: string | null;
 }
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -35,8 +38,57 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user: null,
     carreras: [],
     isLoading: false,
+    isInitializing: true, // empieza en true hasta que verifiquemos credenciales guardadas
     error: null,
   });
+
+  // ─── Restauración de sesión al montar ────────────────────────────────────────
+  useEffect(() => {
+    async function restaurarSesion() {
+      try {
+        const credenciales = await loadCredentials();
+
+        if (!credenciales) {
+          // No hay credenciales guardadas — pasamos a pantalla de bienvenida
+          setState((prev) => ({ ...prev, isInitializing: false }));
+          return;
+        }
+
+        // Intentamos re-autenticar silenciosamente con las credenciales guardadas
+        try {
+          const session = await loginWithSIGA(credenciales.email, credenciales.password);
+
+          let carreras: Carrera[] = [];
+          try {
+            carreras = await getCarreras(session.token);
+          } catch {
+            carreras = [];
+          }
+
+          setState({
+            token: session.token,
+            user: session.datos_persona,
+            carreras,
+            isLoading: false,
+            isInitializing: false,
+            error: null,
+          });
+        } catch {
+          // El token puede haber expirado o la contraseña cambió —
+          // limpiamos las credenciales y mostramos la pantalla de login
+          await clearCredentials();
+          setState((prev) => ({ ...prev, isInitializing: false }));
+        }
+      } catch {
+        // Error inesperado al leer secure store — no bloqueamos la app
+        setState((prev) => ({ ...prev, isInitializing: false }));
+      }
+    }
+
+    restaurarSesion();
+  }, []);
+
+  // ─── Acciones ─────────────────────────────────────────────────────────────────
 
   const login = useCallback(async (email: string, password: string) => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
@@ -51,11 +103,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         carreras = [];
       }
 
+      // Guardamos las credenciales para la próxima apertura
+      await saveCredentials(email, password);
+
       setState({
         token: session.token,
         user: session.datos_persona,
         carreras,
         isLoading: false,
+        isInitializing: false,
         error: null,
       });
     } catch (err) {
@@ -69,8 +125,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    setState({ token: null, user: null, carreras: [], isLoading: false, error: null });
+  const logout = useCallback(async () => {
+    await clearCredentials();
+    setState({ token: null, user: null, carreras: [], isLoading: false, isInitializing: false, error: null });
   }, []);
 
   const clearError = useCallback(() => {
