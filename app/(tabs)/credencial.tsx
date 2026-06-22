@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import {
   View,
   Text,
-  Image,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
@@ -18,6 +17,32 @@ const UTEM_BLUE = '#004EAA';
 const UTEM_GREEN = '#78BF26';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function calcularDv(cuerpo: string | number): string {
+  const digits = String(cuerpo).replace(/[^0-9]/g, '').split('').reverse();
+  const factors = [2, 3, 4, 5, 6, 7];
+  const sum = digits.reduce((acc, d, i) => acc + parseInt(d) * factors[i % factors.length], 0);
+  const dv = 11 - (sum % 11);
+  if (dv === 11) return '0';
+  if (dv === 10) return 'K';
+  return String(dv);
+}
+
+function formatRutVisible(rut: string | number | null | undefined): string {
+  if (rut == null) return '';
+  const body = String(rut).replace(/[^0-9]/g, '');
+  if (!body) return '';
+  const dv = calcularDv(body);
+  const formatted = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${formatted}-${dv}`;
+}
+
+function getInitials(nombre: string): string {
+  const parts = nombre.trim().split(/\s+/);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+}
 
 /**
  * Extrae los dígitos del RUT descartando el DV.
@@ -69,19 +94,11 @@ export default function CredencialScreen() {
           </View>
 
           {/* Foto */}
-          {user.foto ? (
-            <Image
-              source={{ uri: user.foto }}
-              style={styles.photo}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={[styles.photo, styles.photoPlaceholder]}>
-              <Text style={styles.photoPlaceholderText}>
-                {user.nombre_completo?.charAt(0) ?? '?'}
-              </Text>
-            </View>
-          )}
+          <View style={[styles.photo, styles.photoPlaceholder]}>
+            <Text style={styles.photoPlaceholderText}>
+              {getInitials(user.nombre_completo ?? '')}
+            </Text>
+          </View>
 
           {/* Nombre */}
           <Text style={styles.name}>{user.nombre_completo}</Text>
@@ -100,7 +117,7 @@ export default function CredencialScreen() {
           {/* RUT */}
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>RUT</Text>
-            <Text style={styles.infoValue}>{user.rut}</Text>
+            <Text style={styles.infoValue}>{formatRutVisible(user.rut)}</Text>
           </View>
 
           {/* Estado */}

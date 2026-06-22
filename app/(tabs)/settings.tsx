@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   StyleSheet,
   Text,
@@ -6,7 +6,6 @@ import {
   ScrollView,
   Switch,
   Pressable,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
@@ -32,6 +31,25 @@ const COLORS = {
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
 
+function calcularDv(cuerpo: string | number): string {
+  const digits = String(cuerpo).replace(/[^0-9]/g, '').split('').reverse();
+  const factors = [2, 3, 4, 5, 6, 7];
+  const sum = digits.reduce((acc, d, i) => acc + parseInt(d) * factors[i % factors.length], 0);
+  const dv = 11 - (sum % 11);
+  if (dv === 11) return '0';
+  if (dv === 10) return 'K';
+  return String(dv);
+}
+
+function formatRutVisible(rut: string | number | null | undefined): string {
+  if (rut == null) return '';
+  const body = String(rut).replace(/[^0-9]/g, '');
+  if (!body) return '';
+  const dv = calcularDv(body);
+  const formatted = body.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${formatted}-${dv}`;
+}
+
 function getInitials(nombreCompleto: string): string {
   const parts = nombreCompleto.trim().split(/\s+/);
   if (parts.length === 0) return '?';
@@ -45,26 +63,13 @@ interface ProfileCardProps {
   nombreCompleto: string;
   correoUtem: string;
   rut: string;
-  fotoUrl: string | null;
 }
 
-function ProfileCard({ nombreCompleto, correoUtem, rut, fotoUrl }: ProfileCardProps) {
-  const [avatarError, setAvatarError] = useState(false);
-  const mostrarFoto = fotoUrl !== null && !avatarError;
-
+function ProfileCard({ nombreCompleto, correoUtem, rut }: ProfileCardProps) {
   return (
     <View style={styles.profileCard}>
       <View style={styles.avatarContainer}>
-        {mostrarFoto ? (
-          <Image
-            source={{ uri: fotoUrl as string }}
-            style={styles.avatarImage}
-            resizeMode="cover"
-            onError={() => setAvatarError(true)}
-          />
-        ) : (
-          <Text style={styles.avatarInitials}>{getInitials(nombreCompleto)}</Text>
-        )}
+        <Text style={styles.avatarInitials}>{getInitials(nombreCompleto)}</Text>
       </View>
       <View style={styles.profileInfo}>
         <Text style={styles.profileName}>{nombreCompleto}</Text>
@@ -152,7 +157,6 @@ export default function SettingsScreen() {
   const nombreCompleto = user?.nombre_completo ?? '';
   const correoUtem = user?.correo_utem ?? '';
   const rut = user?.rut ?? '';
-  const fotoUrl = user?.foto && user.foto.trim() !== '' ? user.foto : null;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -163,8 +167,7 @@ export default function SettingsScreen() {
       <ProfileCard
         nombreCompleto={nombreCompleto}
         correoUtem={correoUtem}
-        rut={rut}
-        fotoUrl={fotoUrl}
+        rut={formatRutVisible(rut)}
       />
 
       <SectionHeader title="ACCESO INTELIGENTE" />
