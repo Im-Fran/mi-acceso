@@ -84,7 +84,7 @@ function SectionHeader({ title }: SectionHeaderProps) {
 }
 
 interface ToggleRowProps {
-  iconName: 'antenna.radiowaves.left.and.right' | 'location.viewfinder';
+  iconName: 'antenna.radiowaves.left.and.right' | 'location.viewfinder' | 'wifi';
   title: string;
   subtitle: string;
   value: boolean;
@@ -145,7 +145,7 @@ function ActionRow({ onPress }: ActionRowProps) {
 
 export default function SettingsScreen() {
   const { user, logout } = useAuth();
-  const { manoLibresEnabled, setManoLibresEnabled } = useSettings();
+  const { manoLibresEnabled, setManoLibresEnabled, mockModeEnabled, setMockModeEnabled } = useSettings();
 
   const version = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -181,6 +181,17 @@ export default function SettingsScreen() {
       <SectionHeader title="CUENTA" />
       <View style={styles.settingsCard}>
         <ActionRow onPress={logout} />
+      </View>
+
+      <SectionHeader title="DESARROLLO" />
+      <View style={styles.settingsCard}>
+        <ToggleRow
+          iconName="wifi"
+          title="Modo Mock BLE/UWB"
+          subtitle="Simula datos y accesos para pruebas"
+          value={mockModeEnabled}
+          onValueChange={setMockModeEnabled}
+        />
       </View>
 
       <View style={styles.footer}>
