@@ -25,6 +25,7 @@ const COLORS = {
 
 export default function StudentDashboard() {
   const { user, carreras } = useAuth();
+  const { manoLibresEnabled } = useSettings();
 
   const carreraPrincipal = carreras.find((c) => c.orden === 1) ?? carreras[0] ?? null;
 
@@ -34,19 +35,33 @@ export default function StudentDashboard() {
   const sello = carreraPrincipal?.estado ?? '—';
   const fotoUrl = user?.foto && user.foto.trim() !== '' ? user.foto : null;
 
+  const bannerBorderColor = manoLibresEnabled
+    ? COLORS.borderLight
+    : 'rgba(211, 47, 47, 0.2)';
+  const radarPulseOuterStyle = manoLibresEnabled
+    ? { backgroundColor: 'rgba(120, 191, 38, 0.15)', borderColor: '#78BF26' }
+    : { backgroundColor: 'rgba(211, 47, 47, 0.15)', borderColor: '#D32F2F' };
+  const radarDotColor = manoLibresEnabled ? '#78BF26' : '#D32F2F';
+  const bannerTitle = manoLibresEnabled
+    ? 'Acceso Manos Libres Activo'
+    : 'Acceso Manos Libres Inactivo';
+  const bannerSubtitle = manoLibresEnabled
+    ? 'Transmitiendo señal BLE/UWB en segundo plano'
+    : 'Activa BLE/UWB en Configuración para el acceso automático';
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      
+
       {/* 1. Radar de Estado BLE/UWB (Manos Libres) */}
-      <View style={styles.statusBanner}>
+      <View style={[styles.statusBanner, { borderColor: bannerBorderColor }]}>
         <View style={styles.radarContainer}>
-          <View style={styles.radarPulseOuter} />
-          <View style={styles.radarDot} />
+          <View style={[styles.radarPulseOuter, radarPulseOuterStyle]} />
+          <View style={[styles.radarDot, { backgroundColor: radarDotColor }]} />
         </View>
         <View style={styles.statusTextContainer}>
-          <Text style={styles.statusTitle}>Acceso Manos Libres Activo</Text>
-          <Text style={styles.statusSubtitle}>Transmitiendo señal BLE/UWB en segundo plano</Text>
+          <Text style={styles.statusTitle}>{bannerTitle}</Text>
+          <Text style={styles.statusSubtitle}>{bannerSubtitle}</Text>
         </View>
       </View>
 
