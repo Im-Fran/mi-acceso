@@ -3,6 +3,7 @@
  */
 
 const SIGA_LOGIN_URL = 'https://siga.utem.cl/servicios/autenticacion/login/';
+const SIGA_CARRERAS_URL = 'https://siga.utem.cl/servicios/estudiante/carreras/';
 
 export interface DatosPersona {
   rut: string;
@@ -16,6 +17,14 @@ export interface DatosPersona {
 export interface SigaSession {
   token: string;
   datos_persona: DatosPersona;
+}
+
+export interface Carrera {
+  id: number;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  orden: number;
 }
 
 export class AuthError extends Error {
@@ -72,4 +81,50 @@ export async function loginWithSIGA(
   }
 
   return session;
+}
+
+/**
+ * Obtiene las carreras del estudiante autenticado.
+ * @param token  Token de sesión SIGA
+ * @returns Array de Carrera. Retorna [] si la respuesta viene vacía o nula.
+ */
+export async function getCarreras(token: string): Promise<Carrera[]> {
+  const body = new URLSearchParams();
+  body.append('token', token);
+
+  const response = await fetch(SIGA_CARRERAS_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    throw new AuthError(
+      `Error al obtener carreras (${response.status})`,
+      response.status,
+    );
+  }
+
+  const json = await response.json();
+  const rawCarreras = json?.response;
+
+  if (!rawCarreras || !Array.isArray(rawCarreras) || rawCarreras.length === 0) {
+    return [];
+  }
+
+  return rawCarreras.map((item: {
+    carrera_id: number;
+    codigo_carrera: number;
+    nombre_carrera: string;
+    situacion_academica: string;
+    orden: number;
+  }): Carrera => ({
+    id: item.carrera_id,
+    codigo: item.codigo_carrera.toString(),
+    nombre: item.nombre_carrera,
+    estado: item.situacion_academica.trim(),
+    orden: item.orden,
+  }));
 }
