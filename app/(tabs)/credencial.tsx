@@ -24,9 +24,11 @@ const UTEM_GREEN = '#78BF26';
  * Entrada:  "12.345.678-9"
  * Salida:   "12345678"
  */
-function parseRutForQr(rut: string): string {
-  // Eliminar puntos, luego tomar solo la parte antes del guion
-  return rut.replace(/\./g, '').split('-')[0];
+function parseRutForQr(rut: string | number | null | undefined): string {
+  if (rut == null) return '';
+  // Convertir a string defensivamente para manejar casos donde la API
+  // retorna el RUT como número en lugar de string
+  return String(rut).replace(/\./g, '').split('-')[0];
 }
 
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
@@ -40,8 +42,8 @@ export default function CredencialScreen() {
   );
 
   const qrValue = useMemo(
-    () => (user?.rut ? parseRutForQr(user.rut) : ''),
-    [user?.rut],
+    () => (user ? parseRutForQr(user.rut) : ''),
+    [user],
   );
 
   if (!user) {
