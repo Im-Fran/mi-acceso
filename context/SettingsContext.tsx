@@ -11,13 +11,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
 const MANOS_LIBRES_KEY = 'manos_libres_enabled';
-const DEFAULT_VALUE = true;
+const MOCK_MODE_KEY = 'mock_mode_enabled';
+
+const DEFAULT_MANOS_LIBRES = true;
+const DEFAULT_MOCK_MODE = false;
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 interface SettingsContextValue {
   manoLibresEnabled: boolean;
   setManoLibresEnabled: (val: boolean) => void;
+  mockModeEnabled: boolean;
+  setMockModeEnabled: (val: boolean) => void;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -27,21 +32,28 @@ const SettingsContext = createContext<SettingsContextValue | null>(null);
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [manoLibresEnabled, setManoLibresEnabledState] = useState<boolean>(DEFAULT_VALUE);
+  const [manoLibresEnabled, setManoLibresEnabledState] = useState<boolean>(DEFAULT_MANOS_LIBRES);
+  const [mockModeEnabled, setMockModeEnabledState] = useState<boolean>(DEFAULT_MOCK_MODE);
 
-  // Carga el valor persistido al iniciar
+  // Carga los valores persistidos al iniciar
   useEffect(() => {
-    async function cargarPreferencia() {
+    async function cargarPreferencias() {
       try {
-        const stored = await AsyncStorage.getItem(MANOS_LIBRES_KEY);
-        if (stored !== null) {
-          setManoLibresEnabledState(stored === 'true');
+        const [storedManosLibres, storedMockMode] = await Promise.all([
+          AsyncStorage.getItem(MANOS_LIBRES_KEY),
+          AsyncStorage.getItem(MOCK_MODE_KEY),
+        ]);
+        if (storedManosLibres !== null) {
+          setManoLibresEnabledState(storedManosLibres === 'true');
+        }
+        if (storedMockMode !== null) {
+          setMockModeEnabledState(storedMockMode === 'true');
         }
       } catch {
-        // Si falla la lectura, usamos el valor por defecto
+        // Si falla la lectura, usamos los valores por defecto
       }
     }
-    cargarPreferencia();
+    cargarPreferencias();
   }, []);
 
   const setManoLibresEnabled = useCallback(async (val: boolean) => {
@@ -53,9 +65,23 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const setMockModeEnabled = useCallback(async (val: boolean) => {
+    setMockModeEnabledState(val);
+    try {
+      await AsyncStorage.setItem(MOCK_MODE_KEY, String(val));
+    } catch {
+      // Si falla la escritura, el estado en memoria ya fue actualizado
+    }
+  }, []);
+
   const value = useMemo<SettingsContextValue>(
-    () => ({ manoLibresEnabled, setManoLibresEnabled }),
-    [manoLibresEnabled, setManoLibresEnabled],
+    () => ({
+      manoLibresEnabled,
+      setManoLibresEnabled,
+      mockModeEnabled,
+      setMockModeEnabled,
+    }),
+    [manoLibresEnabled, setManoLibresEnabled, mockModeEnabled, setMockModeEnabled],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

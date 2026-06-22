@@ -23,6 +23,7 @@ const MAPPING = {
   'location.viewfinder': 'radar',
   'rectangle.portrait.and.arrow.right': 'logout',
   'qrcode': 'qr-code',
+  'wifi': 'wifi',
 } as IconMapping;
 
 /**

@@ -3,14 +3,25 @@
 
 
 //este index.lsx sera el que de acceso con las credenciales a las pestañas de la app, es decir, a la parte principal de la app
-import React, { useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, Dimensions, Image, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  ScrollView,
+  Dimensions,
+  Image,
+  TouchableOpacity,
+  Pressable,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useRouter } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
+import { useMockBLE, MockBLEData } from '@/hooks/useMockBLE';
+import { useMockAccessLog, MockLogEntry } from '@/hooks/useMockAccessLog';
 
 const { width } = Dimensions.get('window');
 
@@ -23,6 +34,9 @@ const COLORS = {
   textMuted: '#65676B',
   cardBg: '#004EAA',
   borderLight: 'rgba(0, 78, 170, 0.1)',
+  amber: '#F59E0B',
+  amberBg: 'rgba(245, 158, 11, 0.1)',
+  amberBorder: 'rgba(245, 158, 11, 0.4)',
 };
 
 /**
@@ -35,10 +49,62 @@ function parseRutForQr(rut: string | number | null | undefined): string {
   return String(rut).replace(/\./g, '').split('-')[0];
 }
 
+// ─── MockBLEPanel ─────────────────────────────────────────────────────────────
+
+interface MockBLEPanelProps {
+  data: MockBLEData;
+}
+
+function MockBLEPanel({ data }: MockBLEPanelProps) {
+  return (
+    <View style={styles.mockPanel}>
+      <View style={styles.mockPanelHeader}>
+        <View style={styles.mockBadge}>
+          <Text style={styles.mockBadgeText}>SIMULACION</Text>
+        </View>
+        <Text style={styles.mockPanelTitle}>Panel BLE/UWB Mock</Text>
+      </View>
+
+      <View style={styles.mockDataGrid}>
+        <View style={styles.mockDataItem}>
+          <Text style={styles.mockDataLabel}>RSSI</Text>
+          <Text style={styles.mockDataValue}>{data.rssi} dBm</Text>
+        </View>
+        <View style={styles.mockDataItem}>
+          <Text style={styles.mockDataLabel}>DISTANCIA</Text>
+          <Text style={styles.mockDataValue}>{data.distance.toFixed(1)} m</Text>
+        </View>
+        <View style={styles.mockDataItem}>
+          <Text style={styles.mockDataLabel}>DEVICE ID</Text>
+          <Text style={styles.mockDataValue}>{data.deviceId}</Text>
+        </View>
+        <View style={styles.mockDataItem}>
+          <Text style={styles.mockDataLabel}>ESTADO</Text>
+          <Text
+            style={[
+              styles.mockDataValue,
+              { color: data.status === 'CONECTADO' ? COLORS.green : COLORS.amber },
+            ]}
+          >
+            {data.status}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ─── Dashboard ────────────────────────────────────────────────────────────────
+
 export default function StudentDashboard() {
   const router = useRouter();
   const { user, carreras } = useAuth();
-  const { manoLibresEnabled } = useSettings();
+  const { manoLibresEnabled, mockModeEnabled } = useSettings();
+  const mockBLEData = useMockBLE();
+  const { mockLogs, addMockLog } = useMockAccessLog();
+
+  // Estado del FAB: color y deshabilitado durante feedback
+  const [fabActivo, setFabActivo] = useState(false);
 
   const carreraPrincipal = carreras.find((c) => c.orden === 1) ?? carreras[0] ?? null;
 
@@ -64,147 +130,200 @@ export default function StudentDashboard() {
     ? 'Transmitiendo señal BLE/UWB en segundo plano'
     : 'Activa BLE/UWB en Configuración para el acceso automático';
 
+  function handleFabPress() {
+    if (fabActivo) return;
+    addMockLog();
+    setFabActivo(true);
+    setTimeout(() => setFabActivo(false), 1500);
+  }
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+    <View style={styles.outerContainer}>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
 
-      {/* 1. Radar de Estado BLE/UWB (Manos Libres) */}
-      <View style={[styles.statusBanner, { borderColor: bannerBorderColor }]}>
-        <View style={styles.radarContainer}>
-          <View style={[styles.radarPulseOuter, radarPulseOuterStyle]} />
-          <View style={[styles.radarDot, { backgroundColor: radarDotColor }]} />
-        </View>
-        <View style={styles.statusTextContainer}>
-          <Text style={styles.statusTitle}>{bannerTitle}</Text>
-          <Text style={styles.statusSubtitle}>{bannerSubtitle}</Text>
-        </View>
-      </View>
-
-      {/* Título de Sección */}
-      <Text style={styles.sectionTitle}>Tu Credencial Digital</Text>
-
-      {/* 2. Tarjeta de Identificación Universitaria — presionable → pestaña Credencial */}
-      <TouchableOpacity
-        activeOpacity={0.85}
-        onPress={() => router.push('/(tabs)/credencial')}
-        style={styles.credentialCard}
-      >
-        <View style={styles.cardCircleBg} />
-
-        <View style={styles.cardHeader}>
-          <View style={styles.cardLogoContainer}>
-            <Svg viewBox="0 0 44 48" width={28} height={30} fill="none">
-              <Path
-                d="M22 2L4 9v14c0 12 7.8 22.4 18 25 10.2-2.6 18-13 18-25V9L22 2z"
-                fill="rgba(255,255,255,0.15)"
-                stroke="rgba(255,255,255,0.6)"
-                strokeWidth="1.5"
-              />
-              <Rect x="12" y="14" width="10" height="10" rx="1" fill="#FFFFFF" opacity={0.9} />
-              <Rect x="20" y="10" width="8" height="8" rx="1" fill="#78BF26" opacity={1} />
-            </Svg>
-          </View>
-          <View>
-            <Text style={styles.cardInstitution}>UNIVERSIDAD TECNOLÓGICA</Text>
-            <Text style={styles.cardSubInstitution}>METROPOLITANA</Text>
-          </View>
-          <View style={styles.badgePregrado}>
-            <Text style={styles.badgeText}>ALUMNO</Text>
-          </View>
-        </View>
-
-        <View style={styles.cardBody}>
-          {/* QR a la izquierda */}
-          <View style={styles.qrWrapper}>
-            {qrValue ? (
-              <QRCode
-                value={qrValue}
-                size={82}
-                color={COLORS.blue}
-                backgroundColor="white"
-              />
-            ) : (
-              <View style={styles.qrFallback} />
-            )}
-            {/* Pequeña foto sobre el QR (avatar circular) */}
-            {fotoUrl && (
-              <Image
-                source={{ uri: fotoUrl }}
-                style={styles.qrAvatar}
-                resizeMode="cover"
-              />
-            )}
-          </View>
-
-          {/* Datos del Alumno */}
-          <View style={styles.studentData}>
-            <Text style={styles.studentName}>{nombreCompleto}</Text>
-            <Text style={styles.studentLabel}>Carrera</Text>
-            <Text style={styles.studentValue}>{nombreCarrera}</Text>
-
-            <View style={styles.rowGrid}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.studentLabel}>RUT</Text>
-                <Text style={styles.studentValue}>{rut}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.studentLabel}>Sello</Text>
-                <Text style={styles.studentValue}>{sello}</Text>
-              </View>
+          {/* 1. Radar de Estado BLE/UWB (Manos Libres) */}
+          <View style={[styles.statusBanner, { borderColor: bannerBorderColor }]}>
+            <View style={styles.radarContainer}>
+              <View style={[styles.radarPulseOuter, radarPulseOuterStyle]} />
+              <View style={[styles.radarDot, { backgroundColor: radarDotColor }]} />
+            </View>
+            <View style={styles.statusTextContainer}>
+              <Text style={styles.statusTitle}>{bannerTitle}</Text>
+              <Text style={styles.statusSubtitle}>{bannerSubtitle}</Text>
             </View>
           </View>
-        </View>
 
-        {/* Indicador de que es tappeable */}
-        <View style={styles.tapHint}>
-          <Text style={styles.tapHintText}>Toca para ver credencial completa →</Text>
-        </View>
+          {/* 2. Panel Mock BLE/UWB — solo visible en modo mock */}
+          {mockModeEnabled && mockBLEData !== null && (
+            <MockBLEPanel data={mockBLEData} />
+          )}
 
-        <View style={styles.cardFooterBar} />
-      </TouchableOpacity>
+          {/* Título de Sección */}
+          <Text style={styles.sectionTitle}>Tu Credencial Digital</Text>
 
-      {/* 3. Historial de Puertas Abiertas Automáticamente */}
-      <Text style={styles.sectionTitle}>Accesos Recientes (Manos Libres)</Text>
+          {/* 3. Tarjeta de Identificación Universitaria — presionable → pestaña Credencial */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => router.push('/(tabs)/credencial')}
+            style={styles.credentialCard}
+          >
+            <View style={styles.cardCircleBg} />
 
-      <View style={styles.logsContainer}>
-        <View style={styles.logRow}>
-          <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
-          <View style={styles.logInfo}>
-            <Text style={styles.logTitle}>Puerta Laboratorio Norte</Text>
-            <Text style={styles.logSubtitle}>Detectado por UWB • Acceso Concedido</Text>
+            <View style={styles.cardHeader}>
+              <View style={styles.cardLogoContainer}>
+                <Svg viewBox="0 0 44 48" width={28} height={30} fill="none">
+                  <Path
+                    d="M22 2L4 9v14c0 12 7.8 22.4 18 25 10.2-2.6 18-13 18-25V9L22 2z"
+                    fill="rgba(255,255,255,0.15)"
+                    stroke="rgba(255,255,255,0.6)"
+                    strokeWidth="1.5"
+                  />
+                  <Rect x="12" y="14" width="10" height="10" rx="1" fill="#FFFFFF" opacity={0.9} />
+                  <Rect x="20" y="10" width="8" height="8" rx="1" fill="#78BF26" opacity={1} />
+                </Svg>
+              </View>
+              <View>
+                <Text style={styles.cardInstitution}>UNIVERSIDAD TECNOLÓGICA</Text>
+                <Text style={styles.cardSubInstitution}>METROPOLITANA</Text>
+              </View>
+              <View style={styles.badgePregrado}>
+                <Text style={styles.badgeText}>ALUMNO</Text>
+              </View>
+            </View>
+
+            <View style={styles.cardBody}>
+              {/* QR a la izquierda */}
+              <View style={styles.qrWrapper}>
+                {qrValue ? (
+                  <QRCode
+                    value={qrValue}
+                    size={82}
+                    color={COLORS.blue}
+                    backgroundColor="white"
+                  />
+                ) : (
+                  <View style={styles.qrFallback} />
+                )}
+                {/* Pequeña foto sobre el QR (avatar circular) */}
+                {fotoUrl && (
+                  <Image
+                    source={{ uri: fotoUrl }}
+                    style={styles.qrAvatar}
+                    resizeMode="cover"
+                  />
+                )}
+              </View>
+
+              {/* Datos del Alumno */}
+              <View style={styles.studentData}>
+                <Text style={styles.studentName}>{nombreCompleto}</Text>
+                <Text style={styles.studentLabel}>Carrera</Text>
+                <Text style={styles.studentValue}>{nombreCarrera}</Text>
+
+                <View style={styles.rowGrid}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.studentLabel}>RUT</Text>
+                    <Text style={styles.studentValue}>{rut}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.studentLabel}>Sello</Text>
+                    <Text style={styles.studentValue}>{sello}</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Indicador de que es tappeable */}
+            <View style={styles.tapHint}>
+              <Text style={styles.tapHintText}>Toca para ver credencial completa →</Text>
+            </View>
+
+            <View style={styles.cardFooterBar} />
+          </TouchableOpacity>
+
+          {/* 4. Historial de Accesos Recientes */}
+          <Text style={styles.sectionTitle}>Accesos Recientes (Manos Libres)</Text>
+
+          <View style={styles.logsContainer}>
+            {/* Logs simulados del modo mock (aparecen primero) */}
+            {mockModeEnabled && mockLogs.map((entry: MockLogEntry, index: number) => (
+              <React.Fragment key={entry.id}>
+                <View style={styles.logRow}>
+                  <View style={[styles.logIndicator, { backgroundColor: COLORS.amber }]} />
+                  <View style={styles.logInfo}>
+                    <Text style={styles.logTitle}>{entry.title}</Text>
+                    <Text style={styles.logSubtitle}>{entry.subtitle}</Text>
+                  </View>
+                  <Text style={styles.logTime}>{entry.time}</Text>
+                </View>
+                {(index < mockLogs.length - 1 || true) && (
+                  <View style={styles.logSeparator} />
+                )}
+              </React.Fragment>
+            ))}
+
+            {/* Logs hardcodeados */}
+            <View style={styles.logRow}>
+              <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
+              <View style={styles.logInfo}>
+                <Text style={styles.logTitle}>Puerta Laboratorio Norte</Text>
+                <Text style={styles.logSubtitle}>Detectado por UWB • Acceso Concedido</Text>
+              </View>
+              <Text style={styles.logTime}>Hace 3 min</Text>
+            </View>
+
+            <View style={styles.logSeparator} />
+
+            <View style={styles.logRow}>
+              <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
+              <View style={styles.logInfo}>
+                <Text style={styles.logTitle}>Torniquete Acceso Principal</Text>
+                <Text style={styles.logSubtitle}>Detectado por BLE • Acceso Concedido</Text>
+              </View>
+              <Text style={styles.logTime}>08:15 AM</Text>
+            </View>
+
+            <View style={styles.logSeparator} />
+
+            <View style={styles.logRow}>
+              <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
+              <View style={styles.logInfo}>
+                <Text style={styles.logTitle}>Biblioteca Central - Piso 2</Text>
+                <Text style={styles.logSubtitle}>Detectado por BLE • Acceso Concedido</Text>
+              </View>
+              <Text style={styles.logTime}>Ayer</Text>
+            </View>
           </View>
-          <Text style={styles.logTime}>Hace 3 min</Text>
-        </View>
 
-        <View style={styles.logSeparator} />
+          {/* Padding inferior para que el FAB no tape el último item */}
+          {mockModeEnabled && <View style={{ height: 80 }} />}
 
-        <View style={styles.logRow}>
-          <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
-          <View style={styles.logInfo}>
-            <Text style={styles.logTitle}>Torniquete Acceso Principal</Text>
-            <Text style={styles.logSubtitle}>Detectado por BLE • Acceso Concedido</Text>
-          </View>
-          <Text style={styles.logTime}>08:15 AM</Text>
-        </View>
+        </ScrollView>
+      </SafeAreaView>
 
-        <View style={styles.logSeparator} />
-
-        <View style={styles.logRow}>
-          <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
-          <View style={styles.logInfo}>
-            <Text style={styles.logTitle}>Biblioteca Central - Piso 2</Text>
-            <Text style={styles.logSubtitle}>Detectado por BLE • Acceso Concedido</Text>
-          </View>
-          <Text style={styles.logTime}>Ayer</Text>
-        </View>
-      </View>
-
-    </ScrollView>
-    </SafeAreaView>
+      {/* FAB — solo visible en modo mock, fuera del ScrollView */}
+      {mockModeEnabled && (
+        <Pressable
+          onPress={handleFabPress}
+          disabled={fabActivo}
+          style={[
+            styles.fab,
+            { backgroundColor: fabActivo ? COLORS.green : COLORS.blue },
+          ]}
+        >
+          <Text style={styles.fabIcon}>🔑</Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    backgroundColor: COLORS.bgLight,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.bgLight,
@@ -222,7 +341,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: COLORS.borderLight,
   },
@@ -261,6 +380,61 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: COLORS.textMuted,
   },
+
+  // MockBLEPanel
+  mockPanel: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: COLORS.amberBorder,
+  },
+  mockPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  mockBadge: {
+    backgroundColor: COLORS.amber,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginRight: 10,
+  },
+  mockBadgeText: {
+    color: COLORS.white,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  mockPanelTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textDark,
+  },
+  mockDataGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  mockDataItem: {
+    width: '45%',
+  },
+  mockDataLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  mockDataValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textDark,
+  },
+
   sectionTitle: {
     fontSize: 15,
     fontWeight: '800',
@@ -442,5 +616,25 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: COLORS.bgLight,
     marginVertical: 12,
+  },
+
+  // FAB
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+  },
+  fabIcon: {
+    fontSize: 26,
   },
 });
