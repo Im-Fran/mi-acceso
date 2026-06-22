@@ -1,98 +1,163 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, View, Pressable, Dimensions } from 'react-native';
+import Svg, { Path, Rect } from 'react-native-svg';
+import { router } from 'expo-router'; //para concetar con el login con el boton de iniciar sesion
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const { width } = Dimensions.get('window');
+
+// Paleta oficial UTEM 2025 del archivo utem-credential-mockups.html
+const COLORS = {
+  blue: '#004EAA',
+  green: '#78BF26',
+  white: '#FFFFFF',
+  textMuted: 'rgba(255,255,255,0.6)',
+  wmMuted: 'rgba(255,255,255,0.4)',
+};
+
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={styles.container}>
+      {/* Círculos decorativos de fondo */}
+      <View style={styles.circleBottomRight} />
+      <View style={styles.circleTopLeft} />
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      {/* Contenido Principal */}
+      <View style={styles.content}>
+       
+        {/* Escudo / Shield SVG */}
+        <View style={styles.shieldContainer}>
+          <Svg viewBox="0 0 44 48" width={56} height={60} fill="none">
+            <Path
+              d="M22 2L4 9v14c0 12 7.8 22.4 18 25 10.2-2.6 18-13 18-25V9L22 2z"
+              fill="rgba(255,255,255,0.1)"
+              stroke="rgba(255,255,255,0.55)"
+              strokeWidth="1.5"
+            />
+            <Rect x="12" y="14" width="10" height="10" rx="1" fill="#004EAA" opacity={0.85} />
+            <Rect x="20" y="10" width="8" height="8" rx="1" fill="#78BF26" opacity={0.9} />
+            <Path d="M28 30c1.8-1.8 2.8-4.2 2.8-6.8" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" />
+            <Path d="M30.5 32.5c3-3 4.5-7 4.5-11" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" strokeLinecap="round" />
+          </Svg>
+        </View>
+
+        {/* Textos Informativos */}
+        <Text style={styles.watermark}>Universidad Tecnológica Metropolitana</Text>
+        <View style={styles.greenBar} />
+
+        <Text style={styles.title}>UTEM Access</Text>
+        <Text style={styles.description}>
+          Tu credencial universitaria digital. Abre puertas con tu teléfono mediante BLE y UWB sin necesidad de tarjeta física.
+        </Text>
+
+        {/* Botón de Iniciar Sesión */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed
+          ]}
+          onPress={() => {
+            router.push('/login');
+          }}
+        >
+          <Text style={styles.buttonText}>Iniciar sesión</Text>
+        </Pressable>
+
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.blue,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+    paddingHorizontal: 28,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  circleBottomRight: {
     position: 'absolute',
+    bottom: -60,
+    right: -60,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  circleTopLeft: {
+    position: 'absolute',
+    top: -40,
+    left: -40,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+  },
+  content: {
+    alignItems: 'center',
+    width: '100%',
+    zIndex: 1,
+  },
+  shieldContainer: {
+    width: 76,
+    height: 76,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+  watermark: {
+    color: COLORS.wmMuted,
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  greenBar: {
+    width: 28,
+    height: 3,
+    backgroundColor: COLORS.green,
+    borderRadius: 4,
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: COLORS.white,
+    letterSpacing: -0.5,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  button: {
+    width: '100%',
+    backgroundColor: COLORS.white,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonPressed: {
+    opacity: 0.85,
+    backgroundColor: '#f5f5f5',
+  },
+  buttonText: {
+    color: COLORS.blue,
+    fontSize: 14,
+    fontWeight: '800',
   },
 });
