@@ -60,7 +60,7 @@ function MockBLEPanel({ data }: MockBLEPanelProps) {
     <View style={styles.mockPanel}>
       <View style={styles.mockPanelHeader}>
         <View style={styles.mockBadge}>
-          <Text style={styles.mockBadgeText}>SIMULACION</Text>
+          <Text style={styles.mockBadgeText}>SIMULACIÓN</Text>
         </View>
         <Text style={styles.mockPanelTitle}>Panel BLE/UWB Mock</Text>
       </View>
@@ -257,7 +257,7 @@ export default function StudentDashboard() {
                   </View>
                   <Text style={styles.logTime}>{entry.time}</Text>
                 </View>
-                {(index < mockLogs.length - 1 || true) && (
+                {(index < mockLogs.length - 1) && (
                   <View style={styles.logSeparator} />
                 )}
               </React.Fragment>

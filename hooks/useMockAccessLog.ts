@@ -48,7 +48,7 @@ export function useMockAccessLog(): {
     const protocolo = protocoloAleatorio();
     const nuevaEntrada: MockLogEntry = {
       id: generarId(),
-      title: 'Puerta Mock (Simulacion)',
+      title: 'Puerta Mock (Simulación)',
       subtitle: `Detectado por ${protocolo} • Acceso Concedido`,
       time: formatearHoraActual(),
     };
