@@ -5,8 +5,10 @@
 //este index.lsx sera el que de acceso con las credenciales a las pestañas de la app, es decir, a la parte principal de la app
 import React from 'react';
 import { StyleSheet, Text, View, ScrollView, Dimensions, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { useAuth } from '@/context/AuthContext';
+import { useSettings } from '@/context/SettingsContext';
 
 const { width } = Dimensions.get('window');
 
@@ -33,6 +35,7 @@ export default function StudentDashboard() {
   const fotoUrl = user?.foto && user.foto.trim() !== '' ? user.foto : null;
 
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       
       {/* 1. Radar de Estado BLE/UWB (Manos Libres) */}
@@ -151,17 +154,21 @@ export default function StudentDashboard() {
       </View>
 
     </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: COLORS.bgLight,
   },
+  container: {
+    flex: 1,
+  },
   contentContainer: {
     padding: 24,
-    paddingTop: 30,
+    paddingTop: 16,
   },
   statusBanner: {
     flexDirection: 'row',
