@@ -1,5 +1,5 @@
-import { Tabs, router } from 'expo-router';
-import React, { useEffect } from 'react';
+import { Tabs, Redirect } from 'expo-router';
+import React from 'react';
 
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
@@ -11,13 +11,11 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { token } = useAuth();
 
-  useEffect(() => {
-    if (!token) {
-      router.replace('/login');
-    }
-  }, [token]);
-
-  if (!token) return null;
+  // Redirige declarativamente: no usa router.replace() antes de que el
+  // Stack raíz esté montado, evitando el error "navigate before mounting".
+  if (!token) {
+    return <Redirect href="/login" />;
+  }
 
   return (
     <Tabs
