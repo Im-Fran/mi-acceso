@@ -19,7 +19,7 @@ export default function LoginScreen() {
         {/* Input de RUT */}
         <TextInput
           style={styles.input}
-          placeholder="RUT"
+          placeholder="RUT usuario"
           placeholderTextColor="rgba(0, 78, 170, 0.4)"
           value={rut}
           onChangeText={setRut}

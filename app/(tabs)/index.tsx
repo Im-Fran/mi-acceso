@@ -1,163 +1,340 @@
+//index que esta en tabs
+
+
+
+//este index.lsx sera el que de acceso con las credenciales a las pestañas de la app, es decir, a la parte principal de la app
 import React from 'react';
-import { StyleSheet, Text, View, Pressable, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { router } from 'expo-router'; //para concetar con el login con el boton de iniciar sesion
 
 const { width } = Dimensions.get('window');
 
-// Paleta oficial UTEM 2025 del archivo utem-credential-mockups.html
 const COLORS = {
   blue: '#004EAA',
   green: '#78BF26',
   white: '#FFFFFF',
-  textMuted: 'rgba(255,255,255,0.6)',
-  wmMuted: 'rgba(255,255,255,0.4)',
+  bgLight: '#F4F6F9',
+  textDark: '#1C1E21',
+  textMuted: '#65676B',
+  cardBg: '#004EAA',
+  borderLight: 'rgba(0, 78, 170, 0.1)',
 };
 
-
-export default function HomeScreen() {
+export default function StudentDashboard() {
   return (
-    <View style={styles.container}>
-      {/* Círculos decorativos de fondo */}
-      <View style={styles.circleBottomRight} />
-      <View style={styles.circleTopLeft} />
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      
+      {/* 1. Radar de Estado BLE/UWB (Manos Libres) */}
+      <View style={styles.statusBanner}>
+        <View style={styles.radarContainer}>
+          <View style={styles.radarPulseOuter} />
+          <View style={styles.radarDot} />
+        </View>
+        <View style={styles.statusTextContainer}>
+          <Text style={styles.statusTitle}>Acceso Manos Libres Activo</Text>
+          <Text style={styles.statusSubtitle}>Transmitiendo señal BLE/UWB en segundo plano</Text>
+        </View>
+      </View>
 
-      {/* Contenido Principal */}
-      <View style={styles.content}>
-       
-        {/* Escudo / Shield SVG */}
-        <View style={styles.shieldContainer}>
-          <Svg viewBox="0 0 44 48" width={56} height={60} fill="none">
-            <Path
-              d="M22 2L4 9v14c0 12 7.8 22.4 18 25 10.2-2.6 18-13 18-25V9L22 2z"
-              fill="rgba(255,255,255,0.1)"
-              stroke="rgba(255,255,255,0.55)"
-              strokeWidth="1.5"
-            />
-            <Rect x="12" y="14" width="10" height="10" rx="1" fill="#004EAA" opacity={0.85} />
-            <Rect x="20" y="10" width="8" height="8" rx="1" fill="#78BF26" opacity={0.9} />
-            <Path d="M28 30c1.8-1.8 2.8-4.2 2.8-6.8" stroke="rgba(255,255,255,0.45)" strokeWidth="1.2" strokeLinecap="round" />
-            <Path d="M30.5 32.5c3-3 4.5-7 4.5-11" stroke="rgba(255,255,255,0.25)" strokeWidth="1.2" strokeLinecap="round" />
-          </Svg>
+      {/* Título de Sección */}
+      <Text style={styles.sectionTitle}>Tu Credencial Digital</Text>
+
+      {/* 2. Tarjeta de Identificación Universitaria Estilizada */}
+      <View style={styles.credentialCard}>
+        <View style={styles.cardCircleBg} />
+        
+        <View style={styles.cardHeader}>
+          <View style={styles.cardLogoContainer}>
+            <Svg viewBox="0 0 44 48" width={28} height={30} fill="none">
+              <Path 
+                d="M22 2L4 9v14c0 12 7.8 22.4 18 25 10.2-2.6 18-13 18-25V9L22 2z" 
+                fill="rgba(255,255,255,0.15)" 
+                stroke="rgba(255,255,255,0.6)" 
+                strokeWidth="1.5"
+              />
+              <Rect x="12" y="14" width="10" height="10" rx="1" fill="#FFFFFF" opacity={0.9} />
+              <Rect x="20" y="10" width="8" height="8" rx="1" fill="#78BF26" opacity={1} />
+            </Svg>
+          </View>
+          <View>
+            <Text style={styles.cardInstitution}>UNIVERSIDAD TECNOLÓGICA</Text>
+            <Text style={styles.cardSubInstitution}>METROPOLITANA</Text>
+          </View>
+          <View style={styles.badgePregrado}>
+            <Text style={styles.badgeText}>ALUMNO</Text>
+          </View>
         </View>
 
-        {/* Textos Informativos */}
-        <Text style={styles.watermark}>Universidad Tecnológica Metropolitana</Text>
-        <View style={styles.greenBar} />
+        <View style={styles.cardBody}>
+          {/* Foto de Perfil geométrica */}
+          <View style={styles.photoPlaceholder}>
+            <Svg viewBox="0 0 24 24" width={44} height={44} fill="none" stroke="rgba(0, 78, 170, 0.4)" strokeWidth={1.5}>
+              <Path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </Svg>
+          </View>
 
-        <Text style={styles.title}>UTEM Access</Text>
-        <Text style={styles.description}>
-          Tu credencial universitaria digital. Abre puertas con tu teléfono mediante BLE y UWB sin necesidad de tarjeta física.
-        </Text>
-
-        {/* Botón de Iniciar Sesión */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            pressed && styles.buttonPressed
-          ]}
-          onPress={() => {
-            router.push('/login');
-          }}
-        >
-          <Text style={styles.buttonText}>Iniciar sesión</Text>
-        </Pressable>
-
+          {/* Datos del Alumno */}
+          <View style={styles.studentData}>
+            <Text style={styles.studentName}>Juan Pablo González S.</Text>
+            <Text style={styles.studentLabel}>Carrera</Text>
+            <Text style={styles.studentValue}>Ingeniería Civil en Computación</Text>
+            
+            <View style={styles.rowGrid}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.studentLabel}>RUT</Text>
+                <Text style={styles.studentValue}>12.345.678-9</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.studentLabel}>Sello</Text>
+                <Text style={styles.studentValue}>Regular 2026</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+        
+        <View style={styles.cardFooterBar} />
       </View>
-    </View>
+
+      {/* 3. Historial de Puertas Abiertas Automáticamente */}
+      <Text style={styles.sectionTitle}>Accesos Recientes (Manos Libres)</Text>
+      
+      <View style={styles.logsContainer}>
+        <View style={styles.logRow}>
+          <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
+          <View style={styles.logInfo}>
+            <Text style={styles.logTitle}>Puerta Laboratorio Norte</Text>
+            <Text style={styles.logSubtitle}>Detectado por UWB • Acceso Concedido</Text>
+          </View>
+          <Text style={styles.logTime}>Hace 3 min</Text>
+        </View>
+
+        <View style={styles.logSeparator} />
+
+        <View style={styles.logRow}>
+          <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
+          <View style={styles.logInfo}>
+            <Text style={styles.logTitle}>Torniquete Acceso Principal</Text>
+            <Text style={styles.logSubtitle}>Detectado por BLE • Acceso Concedido</Text>
+          </View>
+          <Text style={styles.logTime}>08:15 AM</Text>
+        </View>
+
+        <View style={styles.logSeparator} />
+
+        <View style={styles.logRow}>
+          <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
+          <View style={styles.logInfo}>
+            <Text style={styles.logTitle}>Biblioteca Central - Piso 2</Text>
+            <Text style={styles.logSubtitle}>Detectado por BLE • Acceso Concedido</Text>
+          </View>
+          <Text style={styles.logTime}>Ayer</Text>
+        </View>
+      </View>
+
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.blue,
+    backgroundColor: COLORS.bgLight,
+  },
+  contentContainer: {
+    padding: 24,
+    paddingTop: 30,
+  },
+  statusBanner: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 28,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  radarContainer: {
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 14,
+  },
+  radarPulseOuter: {
+    position: 'absolute',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(120, 191, 38, 0.15)',
+    borderWidth: 1.5,
+    borderColor: COLORS.green,
+  },
+  radarDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: COLORS.green,
+  },
+  statusTextContainer: {
+    flex: 1,
+  },
+  statusTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginBottom: 2,
+  },
+  statusSubtitle: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.textDark,
+    marginBottom: 14,
+    letterSpacing: -0.3,
+  },
+  credentialCard: {
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 20,
+    padding: 20,
     position: 'relative',
     overflow: 'hidden',
-    paddingHorizontal: 28,
-  },
-  circleBottomRight: {
-    position: 'absolute',
-    bottom: -60,
-    right: -60,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-  },
-  circleTopLeft: {
-    position: 'absolute',
-    top: -40,
-    left: -40,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-  },
-  content: {
-    alignItems: 'center',
-    width: '100%',
-    zIndex: 1,
-  },
-  shieldContainer: {
-    width: 76,
-    height: 76,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.18)',
-  },
-  watermark: {
-    color: COLORS.wmMuted,
-    fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  greenBar: {
-    width: 28,
-    height: 3,
-    backgroundColor: COLORS.green,
-    borderRadius: 4,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: COLORS.white,
-    letterSpacing: -0.5,
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  description: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    lineHeight: 18,
-    textAlign: 'center',
     marginBottom: 32,
   },
-  button: {
-    width: '100%',
-    backgroundColor: COLORS.white,
+  cardCircleBg: {
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.15)',
+    paddingBottom: 14,
+    marginBottom: 16,
+  },
+  cardLogoContainer: {
+    marginRight: 10,
+  },
+  cardInstitution: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  cardSubInstitution: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 9,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  badgePregrado: {
+    marginLeft: 'auto',
+    backgroundColor: COLORS.green,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  cardBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 8,
+  },
+  photoPlaceholder: {
+    width: 80,
+    height: 100,
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    paddingVertical: 14,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 16,
   },
-  buttonPressed: {
-    opacity: 0.85,
-    backgroundColor: '#f5f5f5',
+  studentData: {
+    flex: 1,
   },
-  buttonText: {
-    color: COLORS.blue,
-    fontSize: 14,
+  studentName: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '800',
+    marginBottom: 8,
+  },
+  studentLabel: {
+    color: 'rgba(255, 255, 255, 0.5)',
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    marginBottom: 1,
+  },
+  studentValue: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  rowGrid: {
+    flexDirection: 'row',
+    marginTop: 2,
+  },
+  cardFooterBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 5,
+    backgroundColor: COLORS.green,
+  },
+  logsContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: COLORS.borderLight,
+  },
+  logRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  logIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 12,
+  },
+  logInfo: {
+    flex: 1,
+  },
+  logTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.textDark,
+    marginBottom: 2,
+  },
+  logSubtitle: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+  },
+  logTime: {
+    fontSize: 11,
+    color: COLORS.textMuted,
+    fontWeight: '500',
+  },
+  logSeparator: {
+    height: 1,
+    backgroundColor: COLORS.bgLight,
+    marginVertical: 12,
   },
 });
