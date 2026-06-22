@@ -4,8 +4,9 @@
 
 //este index.lsx sera el que de acceso con las credenciales a las pestañas de la app, es decir, a la parte principal de la app
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, Dimensions, Image } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
+import { useAuth } from '@/context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -21,6 +22,16 @@ const COLORS = {
 };
 
 export default function StudentDashboard() {
+  const { user, carreras } = useAuth();
+
+  const carreraPrincipal = carreras.find((c) => c.orden === 1) ?? carreras[0] ?? null;
+
+  const nombreCompleto = user?.nombre_completo ?? 'Cargando...';
+  const rut = user?.rut ?? '—';
+  const nombreCarrera = carreraPrincipal?.nombre ?? '—';
+  const sello = carreraPrincipal?.estado ?? '—';
+  const fotoUrl = user?.foto && user.foto.trim() !== '' ? user.foto : null;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       
@@ -66,27 +77,35 @@ export default function StudentDashboard() {
         </View>
 
         <View style={styles.cardBody}>
-          {/* Foto de Perfil geométrica */}
+          {/* Foto de Perfil */}
           <View style={styles.photoPlaceholder}>
-            <Svg viewBox="0 0 24 24" width={44} height={44} fill="none" stroke="rgba(0, 78, 170, 0.4)" strokeWidth={1.5}>
-              <Path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-            </Svg>
+            {fotoUrl ? (
+              <Image
+                source={{ uri: fotoUrl }}
+                style={styles.photoImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <Svg viewBox="0 0 24 24" width={44} height={44} fill="none" stroke="rgba(0, 78, 170, 0.4)" strokeWidth={1.5}>
+                <Path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </Svg>
+            )}
           </View>
 
           {/* Datos del Alumno */}
           <View style={styles.studentData}>
-            <Text style={styles.studentName}>Juan Pablo González S.</Text>
+            <Text style={styles.studentName}>{nombreCompleto}</Text>
             <Text style={styles.studentLabel}>Carrera</Text>
-            <Text style={styles.studentValue}>Ingeniería Civil en Computación</Text>
+            <Text style={styles.studentValue}>{nombreCarrera}</Text>
             
             <View style={styles.rowGrid}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.studentLabel}>RUT</Text>
-                <Text style={styles.studentValue}>12.345.678-9</Text>
+                <Text style={styles.studentValue}>{rut}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.studentLabel}>Sello</Text>
-                <Text style={styles.studentValue}>Regular 2026</Text>
+                <Text style={styles.studentValue}>{sello}</Text>
               </View>
             </View>
           </View>
@@ -261,6 +280,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 16,
+    overflow: 'hidden',
+  },
+  photoImage: {
+    width: 80,
+    height: 100,
   },
   studentData: {
     flex: 1,

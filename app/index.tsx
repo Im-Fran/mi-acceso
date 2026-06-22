@@ -1,7 +1,8 @@
-import React from 'react';
-import { StyleSheet, Text, View, Pressable, Dimensions } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View, Pressable, Dimensions, ActivityIndicator } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
-import { router } from 'expo-router'; //para concetar con el login con el boton de iniciar sesion
+import { router } from 'expo-router';
+import { useAuth } from '@/context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -14,8 +15,26 @@ const COLORS = {
   wmMuted: 'rgba(255,255,255,0.4)',
 };
 
-
 export default function HomeScreen() {
+  const { isInitializing, token } = useAuth();
+
+  // ─── Redirección automática si ya hay sesión activa ───────────────────────
+  useEffect(() => {
+    if (!isInitializing && token !== null) {
+      router.replace('/(tabs)');
+    }
+  }, [isInitializing, token]);
+
+  // ─── Splash de carga mientras se verifica la sesión guardada ─────────────
+  if (isInitializing) {
+    return (
+      <View style={styles.splashContainer}>
+        <ActivityIndicator size="large" color={COLORS.white} />
+      </View>
+    );
+  }
+
+  // ─── Pantalla de bienvenida (sin sesión) ──────────────────────────────────
   return (
     <View style={styles.container}>
       {/* Círculos decorativos de fondo */}
@@ -24,7 +43,7 @@ export default function HomeScreen() {
 
       {/* Contenido Principal */}
       <View style={styles.content}>
-       
+
         {/* Escudo / Shield SVG */}
         <View style={styles.shieldContainer}>
           <Svg viewBox="0 0 44 48" width={56} height={60} fill="none">
@@ -69,6 +88,12 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  splashContainer: {
+    flex: 1,
+    backgroundColor: COLORS.blue,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: COLORS.blue,
