@@ -17,7 +17,7 @@ import QRCode from 'react-native-qrcode-svg';
 import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useMockBLE, MockBLEData } from '@/hooks/useMockBLE';
-import { useMockAccessLog, MockLogEntry, STATIC_MOCK_LOGS } from '@/hooks/useMockAccessLog';
+import { useMockAccessLog, MockLogEntry } from '@/hooks/useMockAccessLog';
 import { MockFAB } from '@/components/mock/MockFAB';
 
 const COLORS = {
@@ -122,11 +122,10 @@ export default function StudentDashboard() {
     ? 'Transmitiendo señal BLE/UWB en segundo plano'
     : 'Activa BLE/UWB en Configuración para el acceso automático';
 
-  // Combinar logs dinámicos + estáticos y mostrar solo los 5 más recientes
+  // Mostrar los 5 accesos más recientes del historial persistido
   const accesoRecientes = useMemo<MockLogEntry[]>(() => {
-    const dinamicos = mockModeEnabled ? mockLogs : [];
-    return [...dinamicos, ...STATIC_MOCK_LOGS].slice(0, 5);
-  }, [mockLogs, mockModeEnabled]);
+    return mockLogs.slice(0, 5);
+  }, [mockLogs]);
 
   return (
     <View style={styles.outerContainer}>

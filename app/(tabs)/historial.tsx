@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useMockAccessLog, STATIC_MOCK_LOGS, MockLogEntry } from '@/hooks/useMockAccessLog';
+import { useMockAccessLog, MockLogEntry } from '@/hooks/useMockAccessLog';
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -154,10 +154,9 @@ export default function HistorialScreen() {
   const [searchText, setSearchText] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterOption>('Todos');
 
-  // Combinamos logs dinámicos + estáticos, ordenados por fecha desc
+  // Logs persistidos ordenados por fecha descendente
   const todasLasEntradas = useMemo<MockLogEntry[]>(() => {
-    const combinado = [...mockLogs, ...STATIC_MOCK_LOGS];
-    return combinado.sort((a, b) => b.date.getTime() - a.date.getTime());
+    return [...mockLogs].sort((a, b) => b.date.getTime() - a.date.getTime());
   }, [mockLogs]);
 
   // Aplicar filtros
