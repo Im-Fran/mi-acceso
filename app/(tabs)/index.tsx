@@ -1,18 +1,14 @@
 //index que esta en tabs
 
-
-
-//este index.lsx sera el que de acceso con las credenciales a las pestañas de la app, es decir, a la parte principal de la app
-import React, { useMemo, useState } from 'react';
+//este index.tsx sera el que de acceso con las credenciales a las pestañas de la app, es decir, a la parte principal de la app
+import React, { useMemo } from 'react';
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
-  Dimensions,
   Image,
   TouchableOpacity,
-  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path, Rect } from 'react-native-svg';
@@ -22,8 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useSettings } from '@/context/SettingsContext';
 import { useMockBLE, MockBLEData } from '@/hooks/useMockBLE';
 import { useMockAccessLog, MockLogEntry } from '@/hooks/useMockAccessLog';
-
-const { width } = Dimensions.get('window');
+import { MockFAB } from '@/components/mock/MockFAB';
 
 const COLORS = {
   blue: '#004EAA',
@@ -103,9 +98,6 @@ export default function StudentDashboard() {
   const mockBLEData = useMockBLE();
   const { mockLogs, addMockLog } = useMockAccessLog();
 
-  // Estado del FAB: color y deshabilitado durante feedback
-  const [fabActivo, setFabActivo] = useState(false);
-
   const carreraPrincipal = carreras.find((c) => c.orden === 1) ?? carreras[0] ?? null;
 
   const nombreCompleto = user?.nombre_completo ?? 'Cargando...';
@@ -130,12 +122,10 @@ export default function StudentDashboard() {
     ? 'Transmitiendo señal BLE/UWB en segundo plano'
     : 'Activa BLE/UWB en Configuración para el acceso automático';
 
-  function handleFabPress() {
-    if (fabActivo) return;
-    addMockLog();
-    setFabActivo(true);
-    setTimeout(() => setFabActivo(false), 1500);
-  }
+  // Mostrar los 5 accesos más recientes del historial persistido
+  const accesoRecientes = useMemo<MockLogEntry[]>(() => {
+    return mockLogs.slice(0, 5);
+  }, [mockLogs]);
 
   return (
     <View style={styles.outerContainer}>
@@ -243,57 +233,29 @@ export default function StudentDashboard() {
           </TouchableOpacity>
 
           {/* 4. Historial de Accesos Recientes */}
-          <Text style={styles.sectionTitle}>Accesos Recientes (Manos Libres)</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Accesos Recientes (Manos Libres)</Text>
+            <TouchableOpacity onPress={() => router.push('/(tabs)/historial')}>
+              <Text style={styles.sectionLink}>Ver más</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.logsContainer}>
-            {/* Logs simulados del modo mock (aparecen primero) */}
-            {mockModeEnabled && mockLogs.map((entry: MockLogEntry, index: number) => (
+            {accesoRecientes.map((entry: MockLogEntry, index: number) => (
               <React.Fragment key={entry.id}>
                 <View style={styles.logRow}>
-                  <View style={[styles.logIndicator, { backgroundColor: COLORS.amber }]} />
+                  <View style={[styles.logIndicator, { backgroundColor: entry.indicatorColor }]} />
                   <View style={styles.logInfo}>
                     <Text style={styles.logTitle}>{entry.title}</Text>
                     <Text style={styles.logSubtitle}>{entry.subtitle}</Text>
                   </View>
                   <Text style={styles.logTime}>{entry.time}</Text>
                 </View>
-                {(index < mockLogs.length - 1) && (
+                {index < accesoRecientes.length - 1 && (
                   <View style={styles.logSeparator} />
                 )}
               </React.Fragment>
             ))}
-
-            {/* Logs hardcodeados */}
-            <View style={styles.logRow}>
-              <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
-              <View style={styles.logInfo}>
-                <Text style={styles.logTitle}>Puerta Laboratorio Norte</Text>
-                <Text style={styles.logSubtitle}>Detectado por UWB • Acceso Concedido</Text>
-              </View>
-              <Text style={styles.logTime}>Hace 3 min</Text>
-            </View>
-
-            <View style={styles.logSeparator} />
-
-            <View style={styles.logRow}>
-              <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
-              <View style={styles.logInfo}>
-                <Text style={styles.logTitle}>Torniquete Acceso Principal</Text>
-                <Text style={styles.logSubtitle}>Detectado por BLE • Acceso Concedido</Text>
-              </View>
-              <Text style={styles.logTime}>08:15 AM</Text>
-            </View>
-
-            <View style={styles.logSeparator} />
-
-            <View style={styles.logRow}>
-              <View style={[styles.logIndicator, { backgroundColor: COLORS.green }]} />
-              <View style={styles.logInfo}>
-                <Text style={styles.logTitle}>Biblioteca Central - Piso 2</Text>
-                <Text style={styles.logSubtitle}>Detectado por BLE • Acceso Concedido</Text>
-              </View>
-              <Text style={styles.logTime}>Ayer</Text>
-            </View>
           </View>
 
           {/* Padding inferior para que el FAB no tape el último item */}
@@ -302,18 +264,9 @@ export default function StudentDashboard() {
         </ScrollView>
       </SafeAreaView>
 
-      {/* FAB — solo visible en modo mock, fuera del ScrollView */}
+      {/* FAB Speed Dial — solo visible en modo mock, fuera del ScrollView */}
       {mockModeEnabled && (
-        <Pressable
-          onPress={handleFabPress}
-          disabled={fabActivo}
-          style={[
-            styles.fab,
-            { backgroundColor: fabActivo ? COLORS.green : COLORS.blue },
-          ]}
-        >
-          <Text style={styles.fabIcon}>🔑</Text>
-        </Pressable>
+        <MockFAB onSelect={addMockLog} />
       )}
     </View>
   );
@@ -435,12 +388,23 @@ const styles = StyleSheet.create({
     color: COLORS.textDark,
   },
 
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
   sectionTitle: {
     fontSize: 15,
     fontWeight: '800',
     color: COLORS.textDark,
-    marginBottom: 14,
     letterSpacing: -0.3,
+    marginBottom: 14,
+  },
+  sectionLink: {
+    fontSize: 13,
+    color: COLORS.blue,
+    fontWeight: '600',
   },
   credentialCard: {
     backgroundColor: COLORS.cardBg,
@@ -616,25 +580,5 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: COLORS.bgLight,
     marginVertical: 12,
-  },
-
-  // FAB
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-  },
-  fabIcon: {
-    fontSize: 26,
   },
 });

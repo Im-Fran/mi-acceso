@@ -1,64 +1,74 @@
-import { useCallback, useState } from 'react';
+// ─── Imports ──────────────────────────────────────────────────────────────────
+// Los tipos canónicos viven en MockAccessLogContext para evitar dependencia circular.
 
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+import type { MockAccessState, MockLogEntry } from '@/context/MockAccessLogContext';
 
-export interface MockLogEntry {
-  id: string;
-  title: string;
-  subtitle: string;
-  time: string;
-}
+// ─── Tipos re-exportados ───────────────────────────────────────────────────────
+
+export type { MockAccessState, MockLogEntry };
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const MAX_LOGS = 10;
-
 const PROTOCOLOS: string[] = ['BLE', 'UWB'];
+
+// Mapeo de colores por estado
+const INDICATOR_COLORS: Record<MockAccessState, string> = {
+  ACCESS_GRANTED: '#78BF26',
+  ACCESS_DENIED:  '#D32F2F',
+  SEARCHING:      '#F59E0B',
+  CONNECTED:      '#004EAA',
+  TIMEOUT:        '#65676B',
+  EXPIRED:        '#F59E0B',
+};
 
 // ─── Utilidades ───────────────────────────────────────────────────────────────
 
-function formatearHoraActual(): string {
-  const ahora = new Date();
-  const horas = ahora.getHours().toString().padStart(2, '0');
-  const minutos = ahora.getMinutes().toString().padStart(2, '0');
-  return `${horas}:${minutos}`;
+/**
+ * Genera el subtítulo correspondiente a cada estado de acceso.
+ * Los estados que dependen de protocolo usan uno aleatorio.
+ */
+function generarSubtitulo(estado: MockAccessState, protocolo: string): string {
+  switch (estado) {
+    case 'ACCESS_GRANTED':
+      return `Detectado por ${protocolo} • Acceso Concedido`;
+    case 'ACCESS_DENIED':
+      return `Detectado por ${protocolo} • Acceso Denegado`;
+    case 'SEARCHING':
+      return 'Escaneando dispositivos BLE/UWB...';
+    case 'CONNECTED':
+      return `Detectado por ${protocolo} • Señal establecida`;
+    case 'TIMEOUT':
+      return 'Sin respuesta del lector • Tiempo agotado';
+    case 'EXPIRED':
+      return 'Acceso rechazado • Credencial sin vigencia';
+  }
 }
-
-function generarId(): string {
-  return `mock-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-}
-
-function protocoloAleatorio(): string {
-  return PROTOCOLOS[Math.floor(Math.random() * PROTOCOLOS.length)];
-}
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 /**
- * Gestiona el historial de accesos simulados en memoria (no persiste entre navegaciones).
- * addMockLog() inserta una entrada al inicio, manteniendo un máximo de 10 entradas (FIFO).
+ * Mapea el estado de acceso a un status legible para la entrada de log.
  */
-export function useMockAccessLog(): {
-  mockLogs: MockLogEntry[];
-  addMockLog: () => void;
-} {
-  const [mockLogs, setMockLogs] = useState<MockLogEntry[]>([]);
-
-  const addMockLog = useCallback(() => {
-    const protocolo = protocoloAleatorio();
-    const nuevaEntrada: MockLogEntry = {
-      id: generarId(),
-      title: 'Puerta Mock (Simulación)',
-      subtitle: `Detectado por ${protocolo} • Acceso Concedido`,
-      time: formatearHoraActual(),
-    };
-
-    setMockLogs((prev) => {
-      const actualizado = [nuevaEntrada, ...prev];
-      // Mantener máximo MAX_LOGS entradas (FIFO: eliminar las más antiguas del final)
-      return actualizado.slice(0, MAX_LOGS);
-    });
-  }, []);
-
-  return { mockLogs, addMockLog };
+function estadoAStatus(estado: MockAccessState): MockLogEntry['status'] {
+  switch (estado) {
+    case 'ACCESS_GRANTED':
+    case 'CONNECTED':
+      return 'Concedido';
+    case 'ACCESS_DENIED':
+    case 'TIMEOUT':
+    case 'EXPIRED':
+      return 'Rechazado';
+    case 'SEARCHING':
+      return 'Pendiente';
+  }
 }
+
+export { PROTOCOLOS, INDICATOR_COLORS, generarSubtitulo, estadoAStatus };
+
+// ─── Hook re-exportado desde el contexto ──────────────────────────────────────
+
+/**
+ * Hook de historial de accesos mock con persistencia en AsyncStorage.
+ * El estado es compartido entre todas las pantallas mediante MockAccessLogContext.
+ *
+ * Debe usarse dentro de <MockAccessLogProvider> (registrado en app/_layout.tsx).
+ */
+export { useMockAccessLog } from '@/context/MockAccessLogContext';

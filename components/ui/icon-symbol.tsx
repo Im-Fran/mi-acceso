@@ -24,6 +24,8 @@ const MAPPING = {
   'rectangle.portrait.and.arrow.right': 'logout',
   'qrcode': 'qr-code',
   'wifi': 'wifi',
+  'clock.fill': 'history',
+  'magnifyingglass': 'search',
 } as IconMapping;
 
 /**
